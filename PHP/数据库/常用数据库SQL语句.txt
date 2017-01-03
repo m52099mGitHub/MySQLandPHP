@@ -1,0 +1,465 @@
+#创建数据库
+CREATE DATABASE IF NOT EXISTS school;
+#应用数据库
+USE school;
+#创建年级表
+CREATE TABLE IF NOT EXISTS grade(
+		gradeid INT(10) PRIMARY KEY AUTO_INCREMENT,
+		gradename VARCHAR(50) NOT NULL 
+);
+#创建外键的方式--1:创建子表的同时创建外键
+#学生信息表(学号,姓名,性别,年龄,手机号,地址,出生日期,邮箱,身份证号)
+CREATE TABLE IF NOT EXISTS student (
+		studentno INT(4) PRIMARY KEY,
+		#studentname VARCHAR(20) NOT NULL DEFAULT '匿名',
+		sex TINYINT(1) DEFAULT 1,
+		gradeid INT(10),
+		phone VARCHAR(50) NOT NULL,
+		address VARCHAR(255),
+		borndate DATETIME,
+		email VARCHAR(50),
+		identityCard VARCHAR(20) NOT NULL,
+		#创建外键
+		CONSTRAINT FK_gradeid FOREIGN KEY(gradeid) REFERENCES grade(gradeid) 
+);
+
+#创建外键方式二：创建子表完毕后，修改子表添加外键
+CREATE TABLE student(
+	studentno INT(4) PRIMARY KEY,
+	studentname VARCHAR(20) NOT NULL DEFAULT '匿名',
+	sex TINYINT(1) DEFAULT 1,
+	gradeid INT(10),
+	phone VARCHAR(50) NOT NULL,
+	address VARCHAR(255),
+	borndate DATETIME,
+	email VARCHAR(50),
+	identityCard VARCHAR(18) NOT NULL
+);
+
+ALTER TABLE student
+ADD CONSTRAINT FK_gradeid FOREIGN KEY(gradeid) REFERENCES grade(gradeid);
+#删除具有主外键关系的表时，要先删子表，后删主表
+#删除外键
+ALTER TABLE student DROP FOREIGN KEY FK_gradeid;
+ALTER TABLE student DROP INDEX FK_gradeid;
+#使用语句如何增加数据
+INSERT INTO grade(gradename) VALUES('大一');
+INSERT INTO grade VALUES(2,'大二');
+INSERT INTO grade(gradename) VALUES('大三'),('大四');
+
+#NOW()代表当前时间
+INSERT INTO student(studentno,studentname,sex,gradeid,phone,address,borndate,email,identityCard) 
+VALUES(1003,'张三',2,1,'18711765400',NULL,NOW(),NULL,'370123198803040007'),
+(1004,'王五',DEFAULT,2,'1361178888','苏州',NOW(),'wangwu@163.com','370123199003040111');
+
+#使用语句修改数据
+#将李四的地址修改为中国南京
+UPDATE student SET address='中国南京'
+WHERE studentno=1001
+#同时修改多列
+UPDATE student SET address='中国南京',email='lisi@163.com'
+WHERE studentno=1001;
+#条件可以使用运算符
+UPDATE student SET sex=1
+WHERE studentno=1001 OR studentno=1002 OR studentno=1003;
+
+UPDATE student SET sex=2
+WHERE studentno>=1001 AND studentno<=1003;
+
+UPDATE student SET sex=1
+WHERE studentno BETWEEN 1001 AND 1003;
+#使用函数
+UPDATE student SET studentname=CONCAT("姓名：",studentname);
+
+#删除数据
+DELETE FROM grade WHERE gradeid=4;
+
+
+#添加索引:方式1---在创建表,声明列属性时添加索引
+CREATE TABLE test1(
+	id INT(4) PRIMARY KEY,
+	testno VARCHAR(10) UNIQUE,
+	c VARCHAR(50),
+	d VARCHAR(20),
+	e TEXT,
+	INDEX `index_c`(c,d),#为c,d加常规索引,使用频率高的放前面,比如c
+	FULLTEXT(e)#为e添加全文索引,不取名默认用列名e	
+)ENGINE=MYISAM;
+
+
+#添加索引:方式2---在创建表,将所有列都声明完毕后,再添加索引
+CREATE TABLE test2(
+	id INT(4) ,
+	testno VARCHAR(10),
+	c VARCHAR(50),
+	d VARCHAR(20),
+	e TEXT,
+	PRIMARY KEY(id),
+	UNIQUE KEY(testno),
+	INDEX `index_c`(c,d),#为c,d加常规索引,使用频率高的放前面,比如c
+	FULLTEXT(e)#为e添加全文索引,不取名默认用列名e
+)ENGINE=MYISAM;
+
+
+#添加索引:方式3---先创建表,创建表完毕后,修改表添加索引
+CREATE TABLE test3(
+	id INT(4) ,
+	testno VARCHAR(10),
+	c VARCHAR(50),
+	d VARCHAR(20),
+	e TEXT
+)ENGINE=MYISAM;
+ALTER TABLE test3 ADD PRIMARY KEY(id);
+ALTER TABLE test3 ADD UNIQUE KEY(testno);
+ALTER TABLE test3 ADD INDEX(c,d);
+ALTER TABLE test3 ADD FULLTEXT(e);
+
+
+# EXPLAIN:分析查询方式的内容---possible keys(可能用到的索引) ,key(实际用了的索引)用了主键索引
+EXPLAIN SELECT * FROM student WHERE studentno='1000';
+
+#修改student的ENGINE改为MYISAM类型
+ALTER TABLE student ENGINE=MYISAM;
+ALTER TABLE student ADD FULLTEXT(studentname);
+
+
+#用全文索引时,被查的内容不能太多(超过50%)
+SELECT * FROM student WHERE studentname LIKE '李%';
+
+#删除索引:方式1
+DROP INDEX testno ON test3;
+#删除索引:方式2
+ALTER TABLE test3 DROP INDEX c;
+ALTER TABLE test3 DROP INDEX e;
+ALTER TABLE test3 DROP PRIMARY KEY;#主键索引的删除
+
+
+#显示索引信息
+SHOW INDEX FROM student;
+
+
+
+#函数:
+#1.数学函数
+SELECT ABS(-8);#绝对值
+SELECT CEILING(9.8);	#大于等于9.8的最小的整数
+SELECT FLOOR(9.8);  	#小于等于9.8的最大的整数
+SELECT RAND();	    	#返回0---1之间的随机数
+SELECT RAND(10);	#以某个数作为种子,返回重复随机数
+SELECT SIGN(0);		#符号函数,正数1,负数-1,0返回0
+
+#2.字符串函数
+SELECT CHAR_LENGTH('好还学习数据库');	#返回字符串中包含的字符数
+SELECT CONCAT('我','爱','你');		#合并字符串
+SELECT INSERT('我爱你',1,1,'我非常');	#替换字符串,从某个位置开始,替换某个长度	
+SELECT LOWER('I LOVE YOU');		#变小写
+SELECT UPPER('i love you');		#变大写
+SELECT LEFT('我爱你',2);			#从左开始截取2个字符显示
+SELECT RIGHT('我爱你',2);		#从右开始截取2个字符显示
+SELECT REPLACE('你好,我爱你','你','你们');#将 '你'  替换成  '你好'
+SELECT SUBSTR('你好,我爱你',4,3);	#截取,从哪个位置开始截取,截取长度	
+
+
+#3.日期和时间函数
+SELECT CURRENT_DATE();			#获取当前的日期
+SELECT CURDATE();			#获取当前的日期
+SELECT NOW();				#获取当前的日期和时间
+SELECT LOCALTIME();			#获取当前的日期和时间
+SELECT SYSDATE();			#获取当前的日期和时间
+SELECT YEAR(NOW());			#获取当前年份
+SELECT MONTH(NOW());			#获取当前月份
+SELECT DAY(NOW());			#获取当前日
+SELECT HOUR(NOW());			#获取小时
+SELECT MINUTE(NOW());			#获取分
+SELECT SECOND(NOW());			#获取秒
+
+
+#4.系统信息函数
+SELECT VERSION();			#获取系统版本
+SELECT USER();				#获取用户名
+
+#查询姓李的同学,改成姓历
+SELECT REPLACE(studentname,'李','历') AS 新名字 FROM student
+WHERE studentname LIKE '李%';
+
+
+#统计(聚合)函数:count(),sum(),avg(),max(),min()
+SELECT COUNT(studentname) FROM student;	#非空值的计数
+SELECT COUNT(*) FROM student;		#count(*)效率较低
+SELECT COUNT(1) FROM student;
+
+SELECT SUM(studentresult) AS 总和 FROM result;
+SELECT AVG(studentresult) AS 平均分 FROM result;
+SELECT MAX(studentresult) AS 最高分 FROM result;
+SELECT MIN(studentresult) AS 最低分 FROM result;
+
+#查询不同课程的平均分,最高分,最低分
+#1.根据不同课程分组
+SELECT  subjectname,AVG(studentresult) AS 平均分 , 
+	MAX(studentresult) AS 最高分 , 
+	MIN(studentresult) AS 最低分 
+	FROM result r INNER JOIN `subject` sub
+	ON r.SubjectNo=sub.SubjectNo
+	GROUP BY r.subjectno;
+	
+SELECT  subjectname,AVG(studentresult) AS 平均分 , 
+	MAX(studentresult) AS 最高分 , 
+	MIN(studentresult) AS 最低分 
+	FROM result r INNER JOIN `subject` sub
+	ON r.SubjectNo=sub.SubjectNo
+	GROUP BY r.subjectno
+	HAVING 平均分>80;
+	
+SELECT  subjectname,AVG(studentresult) AS 平均分 , 
+	MAX(studentresult) AS 最高分 , 
+	MIN(studentresult) AS 最低分 
+	FROM result r INNER JOIN `subject` sub
+	ON r.SubjectNo=sub.SubjectNo
+	GROUP BY r.subjectno
+	HAVING 平均分>80
+	ORDER BY 平均分 DESC
+	LIMIT 0,4;
+
+
+
+#连接查询
+#连接查询（自连接）
+CREATE TABLE IF NOT EXISTS category(
+	categoryid INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	pid INT(10) NOT NULL,
+	categoryName VARCHAR(50) NOT NULL,
+	PRIMARY KEY(categoryid)
+)
+
+INSERT INTO category 
+VALUES(2,1,"美术设计"),
+(3,1,"软件开发"),
+(4,3,"数据库基础"),
+(5,2,"ps基础"),
+(6,2,"色彩搭配"),
+(7,3,"PHP基础"),
+(8,3,"Java基础");
+
+#编写SQL语句，将栏目的父子关系呈现出来，（父栏目名称、子栏目名称）
+#父栏目   子栏目
+#美术设计  PS基础
+#美术设计  色彩搭配
+#软件开发  数据库基础
+#软件开发  PHP基础
+#软件开发  Java开发
+#把category表看做两张一模一样的表，然后将这两张表连接查询（自连接）
+SELECT a.categoryName AS '父栏目',b.categoryName AS '子栏目'
+FROM category AS a,category AS b
+WHERE a.categoryId=b.pid;
+
+SELECT * FROM category;
+#查询参加过考试的同学信息（学号  姓名  科目号   成绩）
+SELECT s.studentno,studentname,subjectno,studentresult 
+FROM student s
+INNER JOIN result r
+ON s.StudentNo = r.StudentNo;
+
+#查询参加过考试的同学信息（学号  姓名  科目名称   成绩）
+SELECT s.studentno,studentname,subjectname,studentresult 
+FROM student s
+INNER JOIN result r
+ON s.StudentNo = r.StudentNo
+INNER JOIN `subject` sub
+ON r.SubjectNo = sub.subjectno;
+
+#查询学员及所属的年级（学号   学生姓名  年级名）  1  张三 大一
+SELECT studentno AS 学号,studentname AS 学生姓名,gradename AS 年级名称
+FROM student
+INNER JOIN grade
+ON student.GradeId = grade.GradeID;
+
+#查询科目及所属的年级（科目名称  年级名称）      java   大一
+SELECT subjectname AS 科目名称,gradename AS 年级名称
+FROM `subject` sub
+INNER JOIN grade g
+ON sub.gradeid = g.gradeid;
+
+#查询《数据库结构-1》的所有考试结果（学号  学生姓名  科目名称  成绩）,按成绩降序排列
+SELECT s.studentno,studentname,subjectname,studentresult 
+FROM student s
+INNER JOIN result r
+ON s.StudentNo = r.StudentNo
+INNER JOIN `subject` sub
+ON r.SubjectNo = sub.subjectno
+WHERE subjectname='数据库结构-1'
+ORDER BY studentresult DESC,studentno DESC  ;     #默认 asc 升序
+#常见错误：ORDER BY studentresult,studentno DESC   正确：成绩升序排列、学号降序排列
+
+#分页必须必会用到   --  （用户体验、 网络传输 、 查询压力）
+#查询《数据库结构-1》的所有考试结果（学号  学生姓名  科目名称  成绩）,按成绩降序排列
+#每页显示5条记录出来
+SELECT s.studentno,studentname,subjectname,studentresult 
+FROM student s
+INNER JOIN result r
+ON s.StudentNo = r.StudentNo
+INNER JOIN `subject` sub
+ON r.SubjectNo = sub.subjectno
+WHERE subjectname='数据库结构-1'
+ORDER BY studentresult DESC
+LIMIT 0,5;  #等同于 limit 5 offset 0;
+#limit 0,5;  #第一页       #从哪条记录开始（起始行，从0开始）（pageno-1）*pagesize  要显示几条pagesize
+#limit 5,5;   #第二页
+#limit 10,5;  #第三页
+#limit 15,5;  #第四页
+#limit （pageno-1）*pagesize,pagesize   （当前页码-1）*页容量    页容量
+
+#查询 《JAVA第一学年》课程成绩前10名且分数大于80的学生信息（学号、姓名、课程名、分数）
+SELECT s.studentno,studentname,subjectname,studentresult
+FROM student s
+INNER JOIN result r 
+ON s.StudentNo=r.StudentNo
+INNER JOIN `subject` sub
+ON r.SubjectNo=sub.SubjectNo
+WHERE subjectname='JAVA第一学年' AND studentresult>80
+ORDER BY studentresult DESC
+LIMIT 0,10;
+
+ 
+ 
+ 
+
+
+#查询《数据库结构-1》的所有考试结果（学号,科目编号 成绩）,按成绩降序排列
+
+#方法1:使用连接查询
+SELECT studentNo,subjectNo,StudentResult 
+	FROM result r INNER JOIN `subject` sub
+	ON r.SubjectNo=sub.SubjectNo
+	WHERE subjectName='数据库结构-1'
+	ORDER BY StudentResult DESC;
+
+#方法2:使用子查询
+#子查询
+#子查询:在查询语句中的WHERE条件句子中,又嵌套了另外一个查询语句
+#需求:查询《数据库结构-1》的所有考试结果（学号,科目编号 成绩）,按成绩降序排列
+
+#方法1:使用连接查询
+SELECT studentNo,r.subjectNo,StudentResult 
+	FROM result r INNER JOIN `subject` sub
+	ON r.SubjectNo=sub.SubjectNo
+	WHERE subjectName='数据库结构-1'
+	ORDER BY StudentResult DESC;
+
+#方法2:使用子查询
+SELECT subjectNo,StudentResult 
+	FROM result WHERE subjectno=(SELECT subjectno FROM `subject` WHERE subjectname='数据库结构-1')
+	ORDER BY studentresult DESC;
+
+
+
+#需求:查询课程为<<高等数学-2>>且分数不小于80分的学生的学号和姓名
+
+#方法1:使用连接查询
+SELECT  r.studentno,studentname 
+	FROM student s
+	INNER JOIN result r
+	ON s.StudentNo=r.StudentNo
+	INNER JOIN `subject` sub
+	ON r.SubjectNo=sub.SubjectNo
+	WHERE subjectname='高等数学-2' AND studentresult>80;
+#方法2:使用连接查询+子查询(将需求拆分,细化,逐步完善语句)
+SELECT r.studentno,studentname
+	FROM student s INNER JOIN result r
+	ON s.StudentNo=r.StudentNo
+	WHERE StudentResult>=80;
+#在上面SQL基础上,添加需求:查询课程为<<高等数学-2>>
+SELECT r.studentno,studentname
+	FROM student s INNER JOIN result r
+	ON s.StudentNo=r.StudentNo
+	WHERE StudentResult>=80 
+	AND subjectno=(SELECT subjectno FROM `subject` WHERE subjectname='高等数学-2'); 
+#方法3:子查询
+
+#分步写简单的SQL语句,然后将其嵌套起来
+#select studentno ,studentname from student where studentno in(1,2,3,4)
+#select studentno FROM result WHERE studentresult>=80 and subjectno=2 
+#SELECT subjectno FROM `subject` WHERE subjectname='高等数学-2'
+
+
+SELECT studentno ,studentname FROM student WHERE studentno IN(
+	SELECT studentno FROM result WHERE studentresult>=80 AND subjectno=(
+	SELECT subjectno FROM `subject` WHERE subjectname='高等数学-2'
+	);
+)#括弧从里往外查询
+
+
+#查询<<C语言-1>>的前5名学生的成绩信息:学号,姓名,分数
+
+#方法1:
+SELECT  r.studentno,studentname,StudentResult
+	FROM student s
+	INNER JOIN result r
+	ON s.StudentNo=r.StudentNo
+	INNER JOIN `subject` sub
+	ON r.SubjectNo=sub.SubjectNo
+	WHERE subjectname='C语言-1'
+	ORDER BY studentresult DESC
+	LIMIT 0,5;
+	
+#方法2:使用连接查询+子查询
+SELECT  r.studentno,studentname,StudentResult
+	FROM student s
+	INNER JOIN result r
+	ON s.StudentNo=r.StudentNo
+	WHERE subjectno=(
+		SELECT subjectno FROM `subject` WHERE subjectname='C语言-1')
+		ORDER BY studentresult DESC
+		LIMIT 0,5;
+	
+#使用子查询实现,查询郭靖同学所在的年级名称
+SELECT gradename FROM grade WHERE gradeid=(
+	SELECT gradeid FROM student WHERE studentname='郭靖'
+);
+
+
+
+#备份和恢复数据
+#备份数据   mysqldump
+#mysqldump --help|more 获取命令帮助
+
+#数据恢复  source
+#方法1:
+	#  mysql>use test;
+	#  mysql>source 脚本路径
+#方法2:
+	#mysql -uroot -密码 test<脚本路径
+	
+	
+#用工具备份和恢复数据
+	#方法1:直接操作工具
+	#方法2:工具命令
+
+#将deleteschool数据库student表中的学号,姓名两列被分出去
+USE deleteschool;
+
+#备份:被分出去的文件不可以提前存在
+SELECT studentno,studentname INTO OUTFILE 
+	'G:\KGC\第四个月 数据库\备份\student1.sql' FROM student;
+#将备份出去的数据恢复到test数据库的student表中
+USE test;
+CREATE TABLE stutab(
+	id INT(4),
+	sname VARCHAR(20)
+)
+LOAD DATA INFILE 'G:\KGC\第四个月 数据库\备份\student1.sql' INTO TABLE
+	stutab(id,sname);
+
+SELECT * FROM stutab;
+
+
+
+
+
+
+
+
+
+
+
+
+

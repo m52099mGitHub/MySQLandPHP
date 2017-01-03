@@ -1,0 +1,38 @@
+1.超链接或者header()函数等重定向方式
+2.使用cookie将用户信息保存在客户端中
+3.使用session将用户信息保存在服务器端
+
+一.会话控制
+1.cookie的使用:
+	1--->设置cookie:
+		语法:
+		bool setcookie ( string $name [, string $value = "" [, int $expire = 0 [, string $path = "" [, string $domain = "" [, bool $secure = false [, bool $httponly = false ]]]]]] )
+			$name:cookie的名称;
+			$value:cookie的值;
+			$expire:过期时间,秒;
+			$domain:规定cookie的域名;
+			$scure:规定是否是否通过HTTPS来传输Cookie;
+			$httponly:如果设置为true,则不能通过js读取Cookie
+			注意:当没有设置Cookie的过期时间的时候,浏览器关闭,即刻销毁Cookie
+	2--->读取cookie:
+		通过PHP中的$_COOKIE进行读取
+	3--->修改cookie的值:
+		根据cookie的名称修改指定的值
+	4--->删除cookie
+		设置cookie过期时间已过期即可
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
